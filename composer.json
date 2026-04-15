@@ -1,0 +1,25 @@
+{
+    "name": "hexlet/code",
+    "authors": [
+        {
+            "name": "mikhaelHan",
+            "email": "hancharuk270185@mail.ru"
+        }
+    ],
+    "scripts": {
+        "lint": "composer exec --verbose phpcs -- --standard=PSR12 src public",
+        "lint-fix": "composer exec --verbose phpcbf -- --standard=PSR12 src public"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hexlet\\Code\\": "src/"
+        }
+    },
+    "require": {
+        "slim/slim": "^4.15",
+        "slim/psr7": "^1.8"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^4.0"
+    }
+}
