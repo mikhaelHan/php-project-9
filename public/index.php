@@ -116,14 +116,15 @@ $app->get('/urls/{id}', function ($request, $response, array $args) {
         return $response->withStatus(404)->write('Страница не найдена');
     }
 
-    $flash = $this->get('flash')->getMessages();
+    $stmt = $pdo->prepare("SELECT * FROM url_checks WHERE url_id = ? ORDER BY id DESC");
+    $stmt->execute([$id]);
+    $checks = $stmt->fetchAll();
 
-    $params = [
+    return $this->get('renderer')->render($response, 'urls/show.phtml', [
         'url' => $url,
-        'flash' => $flash
-    ];
-
-    return $this->get('renderer')->render($response, 'urls/show.phtml', $params);
+        'checks' => $checks,
+        'flash' => $this->get('flash')->getMessages()
+    ]);
 })->setName('urls.show');
 
 $app->get('/urls', function ($request, $response) {
@@ -139,5 +140,17 @@ $app->get('/urls', function ($request, $response) {
 
     return $this->get('renderer')->render($response, 'urls/index.phtml', $params);
 })->setName('urls.index');
+
+$app->post('/urls/{url_id}/checks', function ($request, $response, array $args) {
+    $urlId = $args['url_id'];
+    $pdo = $this->get(\PDO::class);
+
+    $stmt = $pdo->prepare("INSERT INTO url_checks (url_id, created_at) VALUES (?, ?)");
+    $stmt->execute([$urlId, date('Y-m-d H:i:s')]);
+
+    $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+
+    return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
+});
 
 $app->run();

@@ -1,6 +1,7 @@
 <div class="container-lg">
   <h1 class="mt-5 mb-3">Сайт: <?= $url['name'] ?></h1>
   <div class="table-responsive">
+
     <table class="table table-bordered table-hover text-nowrap" data-test="url">
       <tbody>
         <tr>
@@ -17,6 +18,37 @@
         </tr>
       </tbody>
     </table>
+
+    <h2 class="mt-5 mb-3">Проверки</h2>
+    <form method="post" action="/urls/<?= $url['id'] ?>/checks">
+      <button type="submit" class="btn btn-primary mb-3">Запустить проверку</button>
+    </form>
+
+    <table class="table table-bordered table-hover" data-test="checks">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Код ответа</th>
+          <th>h1</th>
+          <th>title</th>
+          <th>description</th>
+          <th>Дата создания</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($checks as $check): ?>
+          <tr>
+            <td><?= $check['id'] ?></td>
+            <td><?= $check['status_code'] ?></td>
+            <td><?= mb_strimwidth($check['h1'] ?? '', 0, 200, "...") ?></td>
+            <td><?= mb_strimwidth($check['title'] ?? '', 0, 200, "...") ?></td>
+            <td><?= mb_strimwidth($check['description'] ?? '', 0, 200, "...") ?></td>
+            <td><?= $check['created_at'] ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+
   </div>
 
 </div>
