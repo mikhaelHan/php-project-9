@@ -9,6 +9,7 @@ use Valitron\Validator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
+use Symfony\Component\DomCrawler\Crawler;
 
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoloadPath)) {
@@ -161,12 +162,27 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, array $args) 
 
     try {
         $res = $client->get($url['name']);
-        $statusCode = $res->getStatusCode();
+        $html = (string) $res->getBody();
+        $crawler = new Crawler($html);
+
+        $h1 = $crawler->filter('h1')->count() > 0 ? $crawler->filter('h1')->first()->text() : null;
+        $title = $crawler->filter('title')->count() > 0 ? $crawler->filter('title')->first()->text() : null;
+
+        $descriptionNode = $crawler->filter('meta[name="description"]');
+        $description = $descriptionNode->count() > 0 ? $descriptionNode->attr('content') : null;
 
         $stmt = $pdo->prepare(
-            "INSERT INTO url_checks (url_id, status_code, created_at) VALUES (?, ?, ?)"
+            "INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)"
         );
-        $stmt->execute([$urlId, $statusCode, date('Y-m-d H:i:s')]);
+        $stmt->execute([
+            $urlId,
+            $res->getStatusCode(),
+            $h1,
+            $title,
+            $description,
+            date('Y-m-d H:i:s')
+        ]);
 
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     } catch (ConnectException | RequestException $e) {
