@@ -6,6 +6,9 @@ use Slim\Views\PhpRenderer;
 use Slim\Flash\Messages;
 use DI\Container;
 use Valitron\Validator;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoloadPath)) {
@@ -130,25 +133,45 @@ $app->get('/urls/{id}', function ($request, $response, array $args) {
 $app->get('/urls', function ($request, $response) {
     $pdo = $this->get(\PDO::class);
 
-    $stmt = $pdo->query("SELECT * FROM urls ORDER BY id DESC");
-    $urls = $stmt->fetchAll();
+    $sql = "SELECT urls.*, url_checks.status_code, url_checks.created_at AS last_check
+            FROM urls LEFT JOIN (
+                SELECT DISTINCT ON (url_id) * FROM url_checks
+                ORDER BY url_id, id DESC
+            ) AS url_checks
+            ON urls.id = url_checks.url_id
+            ORDER BY urls.id DESC";
 
-    $params = [
+    $urls = $pdo->query($sql)->fetchAll();
+
+    return $this->get('renderer')->render($response, 'urls/index.phtml', [
         'urls' => $urls,
         'flash' => $this->get('flash')->getMessages()
-    ];
-
-    return $this->get('renderer')->render($response, 'urls/index.phtml', $params);
+    ]);
 })->setName('urls.index');
 
 $app->post('/urls/{url_id}/checks', function ($request, $response, array $args) {
     $urlId = $args['url_id'];
     $pdo = $this->get(\PDO::class);
 
-    $stmt = $pdo->prepare("INSERT INTO url_checks (url_id, created_at) VALUES (?, ?)");
-    $stmt->execute([$urlId, date('Y-m-d H:i:s')]);
+    $stmt = $pdo->prepare("SELECT name FROM urls WHERE id = ?");
+    $stmt->execute([$urlId]);
+    $url = $stmt->fetch();
 
-    $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+    $client = new Client(['timeout' => 5.0]);
+
+    try {
+        $res = $client->get($url['name']);
+        $statusCode = $res->getStatusCode();
+
+        $stmt = $pdo->prepare(
+            "INSERT INTO url_checks (url_id, status_code, created_at) VALUES (?, ?, ?)"
+        );
+        $stmt->execute([$urlId, $statusCode, date('Y-m-d H:i:s')]);
+
+        $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+    } catch (ConnectException | RequestException $e) {
+        $this->get('flash')->addMessage('danger', 'Произошла ошибка при проверке');
+    }
 
     return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
 });
