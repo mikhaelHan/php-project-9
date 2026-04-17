@@ -73,15 +73,16 @@ $app->post('/urls', function ($request, $response) {
     $v = new Validator(['url' => $urlData]);
     $v->rule('required', 'url')->message('URL не должен быть пустым');
     $v->rule('url', 'url')->message('Некорректный URL');
-    $v->rule('lengthMax', 'url', 255)->message('URL слишком длинный');
+    $v->rule('lengthMax', 'url', 255)->message('URL превышает 255 символов');
 
     if (!$v->validate()) {
-        $this->get('flash')->addMessage('danger', 'Некорректный URL');
+
+        $errors = $v->errors();
 
         $params = [
             'url' => ['name' => $urlData],
-            'errors' => $v->errors(),
-            'flash' => $this->get('flash')->getMessages()
+            'errors' => $errors,
+            'flash' => ['danger' => array_column($errors, 0)]
         ];
 
         return $this->get('renderer')->render($response->withStatus(422), 'index.phtml', $params);
