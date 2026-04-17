@@ -187,7 +187,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, array $args) 
 
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     } catch (ConnectException | RequestException $e) {
-        $this->get('flash')->addMessage('danger', 'Произошла ошибка при проверке');
+        $this->get('flash')->addMessage('danger', 'Произошла ошибка при проверке, не удалось подключиться');
     }
 
     return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
