@@ -81,7 +81,7 @@ $app->post('/urls', function ($request, $response) {
         $params = [
             'url' => ['name' => $urlData],
             'errors' => $errors,
-            'flash' => ['danger' => array_column($errors, 0)]
+            'flash' => ['danger' => array_column($errors ?: [], 0)]
         ];
 
         return $this->get('renderer')->render($response->withStatus(422), 'index.phtml', $params);
