@@ -76,7 +76,6 @@ $app->post('/urls', function ($request, $response) {
     $v->rule('lengthMax', 'url', 255)->message('URL превышает 255 символов');
 
     if (!$v->validate()) {
-
         $errors = $v->errors();
 
         $params = [
