@@ -77,11 +77,12 @@ $app->post('/urls', function ($request, $response) {
 
     if (!$v->validate()) {
         $errors = $v->errors();
+        $errorMessages = is_array($errors) ? array_column($errors, 0) : [];
 
         $params = [
             'url' => ['name' => $urlData],
             'errors' => $errors,
-            'flash' => ['danger' => array_column($errors ?: [], 0)]
+            'flash' => ['danger' => $errorMessages]
         ];
 
         return $this->get('renderer')->render($response->withStatus(422), 'index.phtml', $params);
